@@ -1,4 +1,4 @@
-### Licensing
+## Licensing
 
 Code (C) jewel.  Licensed under the GPL v3.0, included below.
 

@@ -1,32 +1,41 @@
-= Chort, the Chore Chart
+# Chort, the Chore Chart
 
 This is a browser-based chore tracker that I have built to keep track of my
 children's chores.  It is synchronized in real time to any devices that have it
 open.
 
-== Why I built it
+## Why I built it
 
-== How I use it
+## How I use it
 
-== Warnings
+## Warnings
 
 The database has been wiped out twice for me during testing.  Make backups.
 I've also experienced a synchronization problem when stress-testing chore
 toggling with multiple users.
 
-== Installation Instructions
+## Installation Instructions
 
-== Usage
+First, checkout this repository somewhere.  Then, from that directory, run:
 
-=== Keyboard Usage
+```bash
+yarn install
+nodemon server.js
+```
 
-=== Points
+Then browse to `http://localhost:3000`.
 
-== Note on licensing
+## Usage
 
-== Contributing
+### Keyboard Usage
 
-== TODO
+### Points
+
+## Note on licensing
+
+## Contributing
+
+## TODO
 
 - [ ] Basic authorization
 - [ ] Get sounds with a compatible license
