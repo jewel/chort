@@ -18,6 +18,9 @@ toggling with multiple users.
 
 First, checkout this repository somewhere.  Then, from that directory, run:
 
+Copy `client/config.coffee.example` to client/config.coffee` and edit to add
+your children and their chores.
+
 ```bash
 yarn install
 nodemon server.js
@@ -32,6 +35,11 @@ Then browse to `http://localhost:3000`.
 ### Points
 
 ## Note on licensing
+
+## Hacking
+
+The data and synchronization layer is built on top of statebus.  See
+[its tutorial](https://braid.news/tutorial) for examples.
 
 ## Contributing
 
