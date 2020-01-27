@@ -1,0 +1,54 @@
+window.chortConfig = config = {}
+
+
+# Which emoji should we use for each chore?
+# Hint: The hex code can be found on emojipedia
+config.choreIcons =
+  bathroom: "1f6bb"
+  bedroom: "1f6cf"
+  clothes: "1f456"
+  dishes: "1f37d"
+  garbage: "1f5d1"
+  homework: "1f4dd"
+  lawn: "1f3e1"
+  piano: "1f3b9"
+  sweep: "1f9f9"
+  weeds: "1f331"
+
+# List of kids
+config.kids =
+  jack:
+    password: "321"
+    color: "#d4af37"
+    picture: "/img/kids/jack.jpg"
+  jill:
+    password: "132"
+    color: "turquoise"
+    picture: "/img/kids/jill.jpg"
+
+# Which chores are done every day?
+config.everyday =
+  jack: ["bedroom", "piano"]
+  jill: ["bedroom", "piano"]
+
+# Weekly chores.  Each child has an array of chores, one array per day of the
+# week, with Sunday first
+config.matrix =
+  jack: [
+      []
+      ["homework", "pantry", "weeds"]
+      ["homework", "dishes"]
+      ["homework", "clothes"]
+      ["homework", "garbage", "dishes"]
+      ["homework"]
+      ["weeds"]
+    ]
+  jill: [
+      []
+      ["homework", "clothes", "dishes"]
+      ["homework", "sweep"]
+      ["homework", "sweep"]
+      ["homework", "garbage"]
+      ["homework"]
+      []
+    ]
