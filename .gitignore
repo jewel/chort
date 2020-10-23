@@ -3,3 +3,4 @@
 /client/config.coffee
 /backups
 /yarn-error.log
+/package-lock.json
