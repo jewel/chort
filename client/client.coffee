@@ -160,6 +160,7 @@ dom.MESSAGES = ->
   TEXTAREA
     className: "messages"
     value: state["/messages"]
+    tabIndex: -1
     onChange: (e) -> state["/messages"] = e.target.value
 
 two = (i) ->
@@ -195,7 +196,9 @@ date = ->
   new Date(state["time/3600"].time)
 
 today = ->
-  d = date()
+  isoDate date()
+
+isoDate = ( d ) ->
   str = ""
   str += d.getFullYear()
   str += "-"
@@ -204,6 +207,11 @@ today = ->
   str += two d.getDate()
   str
 
+daysAgo = (num) ->
+  d = date()
+  d.setDate d.getDate() - num
+  isoDate d
+
 toggleChore = (kid, chore) ->
   key = "/#{today()}/#{kid}/#{chore}"
   if state[key]
@@ -211,6 +219,25 @@ toggleChore = (kid, chore) ->
   else
     broadcast '1-up'
   state[key] = !state[key]
+
+starDiffKey = (kid) ->
+  key = "/stars_diff/#{today()}/#{kid}"
+
+changeStars = (kid, diff) ->
+  key = starDiffKey kid
+  state[key] = 0 unless state[key]
+  state[key] += diff
+  state["/stars/#{kid}"] = (state["/stars/#{kid}"] || 0) + diff
+
+starTotal = (kid) ->
+  total = state["/stars/#{kid}"] || 0
+  diff = state[starDiffKey(kid)] || 0
+  str = "#{total - diff}"
+  if diff > 0
+    str += "+#{diff}"
+  else if diff < 0
+    str += "-#{-diff}"
+  str
 
 kidChores = (kid) ->
   everyday[kid].concat(matrix[kid][date().getDay()] || [])
@@ -229,15 +256,15 @@ dom.CHORE_CHART = ->
             src: kids[kid].picture
             backgroundColor: kids[kid].color
             onClick: ->
-              state["/stars/#{kid}"] = (state["/stars/#{kid}"] || 0) + 1
+              changeStars kid, 1
               broadcast 'coin'
           DIV
             className: "kid-stars"
             border: "10px solid #{kids[kid].color}"
             onClick: ->
-              state["/stars/#{kid}"] = (state["/stars/#{kid}"] || 0) - 1
+              changeStars kid, -1
               broadcast 'stomp'
-            "" + (state["/stars/#{kid}"] || 0)
+            starTotal kid
         kidChores(kid).map (chore) ->
           key = "/#{today()}/#{kid}/#{chore}"
           done = state[key]
