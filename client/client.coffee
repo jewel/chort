@@ -1,4 +1,8 @@
 context = new AudioContext()
+gain = context.createGain()
+gain.connect context.destination
+gain.gain.value = 0.4
+
 buffers = {}
 
 createSoundSource = (key, data) ->
@@ -17,11 +21,30 @@ loadSound = (key) ->
   req.send()
 
 sounds = [
-    "coin"
-    "stomp"
-    "warning"
-    "mariodie"
     "1-up"
+    "bowserfalls"
+    "bowserfire"
+    "breakblock"
+    "bump"
+    "coin"
+    "fireball"
+    "fireworks"
+    "flagpole"
+    "gameover"
+    "jump-small"
+    "jump-super"
+    "kick"
+    "mariodie"
+    "pause"
+    "pipe"
+    "powerup"
+    "powerup_appears"
+    "stage_clear"
+    "stomp"
+    "underworld"
+    "vine"
+    "warning"
+    "world_clear"
   ]
 
 sounds.forEach (key) ->
@@ -31,17 +54,25 @@ broadcast = (key) ->
   state['/sound/next'] = key
   state['/sound/counter'] = (state['/sound/counter'] || 0) + 1
 
+playing = false
+
 play = (key) ->
+  if playing
+    return
   buffer = buffers[key]
   source = context.createBufferSource()
   source.buffer = buffer
-  source.connect context.destination
+  source.connect gain
   source.start 0
+  setTimeout (-> playing = false), buffer.duration * 1000
+  playing = true
+
 
 kids = chortConfig.kids
 everyday = chortConfig.everyday
 matrix = chortConfig.matrix
 choreIcons = chortConfig.choreIcons
+zones = chortConfig.zones
 
 daysOfWeek = [
     "Sun"
@@ -97,17 +128,53 @@ window.addEventListener "keydown", (e) ->
     if state.login
       logout()
     else
+      play '1-up'
       state.login = 1
       state.username = false
     return
 
+  # Not logged in
   if state.login == 0
     if e.key == 'm'
-      play 'mariodie'
+      play '1-up'
     if e.key == 'n'
-      play 'warning'
+      play 'bowserfalls'
+    if e.key == 'v'
+      play 'bowserfire'
+    if e.key == 'w'
+      play 'breakblock'
+    if e.key == 'k'
+      play 'bump'    
+    if e.key == 'o'
+      play 'coin'
+    if e.key == 's'
+      play 'fireball'  
+    if e.key == 'd'
+      play 'fireworks'
+    if e.key == 't'
+      play 'flagpole'
+    if e.key == 'q'
+      play 'gameover'
+    if e.key == 'y'
+      play 'jump-small'
+    if e.key == 'x'
+      play 'jump-super'
+    if e.key == 'p'
+      play 'kick'
+    if e.key == 'u'
+      play 'mariodie'
+    if e.key == 'z'
+      play 'pause'
+    if e.key == 'P'
+      play 'pipe'
+    if e.key == 'f'
+      play 'powerup'
+    if e.key == 'r'
+      shortSounds = sounds.filter( (sound) -> buffers[sound].duration <= 1 )
+      play shortSounds[ Math.floor( Math.random() * shortSounds.length ) ]
     return
 
+  # Waiting for username (first letter)
   if state.login == 1
     Object.keys(kids).forEach (kid) ->
       if kid[0] == e.key
@@ -116,16 +183,24 @@ window.addEventListener "keydown", (e) ->
         state.password = ""
     return
 
+  # Typing password
   if state.login == 2
-    state.password += e.key
+    if e.key == "Backspace"
+      state.password = state.password.slice 0, state.password.length - 1
+      return
+    if e.key.length == 1
+      state.password += e.key
     if state.password == kids[state.username].password
       resetLogoutTimer()
       state.login = 3
       play 'coin'
     return
 
+  # Logged in
   if state.login == 3
     num = parseInt e.key, 10
+    if e.key == "0"
+      num = 10
     resetLogoutTimer()
     if num > 0
       list = kidChores state.username
@@ -133,6 +208,16 @@ window.addEventListener "keydown", (e) ->
       if choreIcons[chore]
         toggleChore state.username, chore
       else
+        play 'stomp'
+    else if kids[state.username].super
+      Object.keys(kids).forEach (kid) ->
+        if kid[0] == e.key
+          changeStars kid, 1
+          return
+        if kid[0].toUpperCase() == e.key
+          changeStars kid, -1
+          return
+      if e.key.length == 1
         play 'stomp'
     else
       play 'stomp'
@@ -207,18 +292,17 @@ isoDate = ( d ) ->
   str += two d.getDate()
   str
 
-daysAgo = (num) ->
-  d = date()
-  d.setDate d.getDate() - num
-  isoDate d
-
 toggleChore = (kid, chore) ->
   key = "/#{today()}/#{kid}/#{chore}"
-  if state[key]
-    broadcast 'stomp'
-  else
-    broadcast '1-up'
   state[key] = !state[key]
+
+  if state[key]
+    if allDone(kid)
+      broadcast 'world_clear'
+    else
+      broadcast '1-up'
+  else
+    broadcast 'stomp'
 
 starDiffKey = (kid) ->
   key = "/stars_diff/#{today()}/#{kid}"
@@ -239,13 +323,29 @@ starTotal = (kid) ->
     str += "-#{-diff}"
   str
 
+todaysZones = (kid) ->
+  days = Math.round( (Date.parse(today()) - Date.parse(zones.start)) / (24 * 60 * 60 * 1000))
+  weeks = Math.floor(days / 7)
+  index = zones.owners.indexOf( kid )
+  return [] if index == -1
+  offset = (weeks + index) % zones.rotation.length
+  [zones.rotation[offset]]
+
+
 kidChores = (kid) ->
-  everyday[kid].concat(matrix[kid][date().getDay()] || [])
+  (everyday[kid] || []).concat(todaysZones(kid)).concat((matrix[kid] || [])[date().getDay()] || [])
+
+allDone = (kid) ->
+  for chore in kidChores(kid)
+    if !state["/#{today()}/#{kid}/#{chore}"]
+      return false
+  true
 
 dom.CHORE_CHART = ->
-  DIV {className: "chore-chart"},
-    key: "chore-chart"
+  DIV
+    className: 'chore-chart'
     Object.keys(kids).map (kid) ->
+      return null if kids[kid].invisible
       DIV
         className: "kid"
         key: kid
@@ -255,6 +355,7 @@ dom.CHORE_CHART = ->
             className: "kid-picture"
             src: kids[kid].picture
             backgroundColor: kids[kid].color
+            boxShadow: if allDone(kid) then "0 0 80px #{kids[kid].color}" else "none"
             onClick: ->
               changeStars kid, 1
               broadcast 'coin'
@@ -273,6 +374,7 @@ dom.CHORE_CHART = ->
             className: "chore"
             backgroundColor: if done then kids[kid].color else "black"
             opacity: if done then "1.0" else "0.5"
+            title: chore
             onClick: ->
               toggleChore kid, chore
             IMG

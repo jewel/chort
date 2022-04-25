@@ -1,0 +1,16 @@
+[Unit]
+Description=Kid Chore Chart
+
+[Service]
+Type=simple
+WorkingDirectory=/data/chort
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+User=aurora
+Group=aurora
+SyslogIdentifier=chort
+
+[Install]
+WantedBy=multi-user.target
+

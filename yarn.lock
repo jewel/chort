@@ -50,9 +50,10 @@ assign-symbols@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/assign-symbols/-/assign-symbols-1.0.0.tgz#59667f41fadd4f20ccbc2bb96b8d4f7f78ec0367"
 
-asturur-noto-emoji@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/asturur-noto-emoji/-/asturur-noto-emoji-5.0.0.tgz#71e08ed51e1737936a73b7bd7c36c3648cf4fa39"
+asturur-noto-emoji@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/asturur-noto-emoji/-/asturur-noto-emoji-6.1.0.tgz#76a9fd9600933875bcd3025d404b1da05dc1ae2b"
+  integrity sha512-nLUJWqRRLivF/H/Hqf7VTnUcYVebM1zeEVZdFM88OoOxwC4uOdILFcU5FvdSO9brXFN+rgbC1FUdT29HGI4m5Q==
 
 async-each@^1.0.0:
   version "1.0.3"
