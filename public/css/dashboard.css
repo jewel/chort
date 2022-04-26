@@ -8,7 +8,7 @@ body {
 .container {
   position: relative;
   width: 1920px;
-  height: 1080px;
+  height: 1440px;
 }
 .chore-chart {
   display: flex;
@@ -38,6 +38,26 @@ body {
   background: black;
   border-radius: 50%;
   user-select: none;
+}
+.kid-stars-button {
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  font-size: 30px;
+  background: black;
+  border-radius: 50%;
+  user-select: none;
+  text-align: center;
+}
+.kid-stars-up {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+.kid-stars-down {
+  position: absolute;
+  bottom: 0;
+  left: 0;
 }
 .kid-picture {
   width: 200px;
@@ -94,10 +114,26 @@ body {
   margin: 20px;
 }
 .keyboard {
-  background: "red";
   position: absolute;
   font-size: 80px;
   bottom: 0;
   left: 100px;
   white-space: "pre";
+}
+.logout-remaining {
+  background: #200;
+  height: 5px;
+  padding: 0;
+}
+.logout-remaining-bar {
+  background: #600;
+  height: 5px;
+  margin: 0;
+  padding: 0;
+}
+.keypad button {
+  font-size: 80px;
+  width: 100px;
+  height: 100px;
+  margin-right: 10px;
 }

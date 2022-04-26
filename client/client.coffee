@@ -68,11 +68,26 @@ play = (key) ->
   playing = true
 
 
+urlParams = new URLSearchParams window.location.search
+secureMouse = urlParams.get("securemouse") == "1"
+
 kids = chortConfig.kids
 everyday = chortConfig.everyday
 matrix = chortConfig.matrix
 choreIcons = chortConfig.choreIcons
 zones = chortConfig.zones
+
+isSuper = () ->
+  return false if !state.login || state.login < 3
+  kid = kids[state.username]
+  kid.super
+
+checkMouse = (username) ->
+  return true if !secureMouse
+  return false if !state.login || state.login < 3
+  return true if isSuper()
+  state.username == username
+
 
 daysOfWeek = [
     "Sun"
@@ -113,19 +128,33 @@ window.statebus_ready = window['statebus_ready'] || []
 statebus_ready.push registerTime
 
 logoutTimer = null
+logoutTime = 10000
+logoutAt = null
 
 logout = ->
   play 'stomp'
   state.login = 0
+  logoutAt = null
   clearTimeout logoutTimer
+
+updateLogoutRemaining = ->
+  return null if logoutAt == null
+  state.logoutRemaining = logoutAt - Date.now()
+  if state.logoutRemaining < 0
+    state.logoutRemaining = 0
+  else
+    requestAnimationFrame updateLogoutRemaining
 
 resetLogoutTimer = ->
   clearTimeout logoutTimer
-  logoutTimer = setTimeout logout, 10000
+  logoutTimer = setTimeout logout, logoutTime
+  logoutAt = Date.now() + logoutTime
+  updateLogoutRemaining()
 
-window.addEventListener "keydown", (e) ->
-  if e.key == "Enter"
+handleKey = (key) ->
+  if key == "Enter"
     if state.login
+      play 'kick'
       logout()
     else
       play '1-up'
@@ -135,41 +164,41 @@ window.addEventListener "keydown", (e) ->
 
   # Not logged in
   if state.login == 0
-    if e.key == 'm'
+    if key == 'm'
       play '1-up'
-    if e.key == 'n'
+    if key == 'n'
       play 'bowserfalls'
-    if e.key == 'v'
+    if key == 'v'
       play 'bowserfire'
-    if e.key == 'w'
+    if key == 'w'
       play 'breakblock'
-    if e.key == 'k'
-      play 'bump'    
-    if e.key == 'o'
+    if key == 'k'
+      play 'bump'
+    if key == 'o'
       play 'coin'
-    if e.key == 's'
-      play 'fireball'  
-    if e.key == 'd'
+    if key == 's'
+      play 'fireball'
+    if key == 'd'
       play 'fireworks'
-    if e.key == 't'
+    if key == 't'
       play 'flagpole'
-    if e.key == 'q'
+    if key == 'q'
       play 'gameover'
-    if e.key == 'y'
+    if key == 'y'
       play 'jump-small'
-    if e.key == 'x'
+    if key == 'x'
       play 'jump-super'
-    if e.key == 'p'
+    if key == 'p'
       play 'kick'
-    if e.key == 'u'
+    if key == 'u'
       play 'mariodie'
-    if e.key == 'z'
+    if key == 'z'
       play 'pause'
-    if e.key == 'P'
+    if key == 'P'
       play 'pipe'
-    if e.key == 'f'
+    if key == 'f'
       play 'powerup'
-    if e.key == 'r'
+    if key == 'r'
       shortSounds = sounds.filter( (sound) -> buffers[sound].duration <= 1 )
       play shortSounds[ Math.floor( Math.random() * shortSounds.length ) ]
     return
@@ -177,29 +206,33 @@ window.addEventListener "keydown", (e) ->
   # Waiting for username (first letter)
   if state.login == 1
     Object.keys(kids).forEach (kid) ->
-      if kid[0] == e.key
+      if kid[0] == key
         state.login = 2
         state.username = kid
         state.password = ""
+        play 'kick'
     return
 
   # Typing password
   if state.login == 2
-    if e.key == "Backspace"
+    if key == "Backspace"
       state.password = state.password.slice 0, state.password.length - 1
+      play 'kick'
       return
-    if e.key.length == 1
-      state.password += e.key
+    if key.length == 1
+      state.password += key
     if state.password == kids[state.username].password
       resetLogoutTimer()
       state.login = 3
       play 'coin'
+    else if key.length == 1
+      play 'kick'
     return
 
   # Logged in
   if state.login == 3
-    num = parseInt e.key, 10
-    if e.key == "0"
+    num = parseInt key, 10
+    if key == "0"
       num = 10
     resetLogoutTimer()
     if num > 0
@@ -211,17 +244,39 @@ window.addEventListener "keydown", (e) ->
         play 'stomp'
     else if kids[state.username].super
       Object.keys(kids).forEach (kid) ->
-        if kid[0] == e.key
+        if kid[0] == key
           changeStars kid, 1
           return
-        if kid[0].toUpperCase() == e.key
+        if kid[0].toUpperCase() == key
           changeStars kid, -1
           return
-      if e.key.length == 1
+      if key.length == 1
         play 'stomp'
     else
       play 'stomp'
     return
+
+window.addEventListener "keydown", (e) ->
+  handleKey e.key
+
+dom.KEYPAD = ->
+  return null unless secureMouse && state.login == 2
+  DIV
+    className: "keypad"
+    dom.BUTTONS()
+    BUTTON
+      onClick: ->
+        handleKey "Backspace"
+      String.fromCharCode(9003)
+
+dom.BUTTONS = ->
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map (i) ->
+    BUTTON
+      onClick: ->
+        handleKey "#{i}"
+
+      "#{i}"
+
 
 dom.KEYBOARD = ->
   text = ""
@@ -234,12 +289,26 @@ dom.KEYBOARD = ->
     for i in [0...password.length]
       text += "*"
   if state.login == 3
-    text = "#{username} ready! "
+    text = "#{username} ready!"
 
   DIV
     className: "keyboard"
     color: "red"
     text
+    dom.KEYPAD()
+    dom.REMAINING()
+
+dom.REMAINING = ->
+  return null if logoutAt == null
+  width = 800
+  DIV
+    className: "logout-remaining"
+    style:
+      width: width
+    DIV
+      className: "logout-remaining-bar"
+      style:
+        width: state.logoutRemaining / logoutTime * width
 
 dom.MESSAGES = ->
   TEXTAREA
@@ -247,6 +316,7 @@ dom.MESSAGES = ->
     value: state["/messages"]
     tabIndex: -1
     onChange: (e) -> state["/messages"] = e.target.value
+    disabled: secureMouse
 
 two = (i) ->
   i.toString().padStart 2, '0'
@@ -267,7 +337,10 @@ dom.CLOCK = ->
     key: "clock"
     backgroundColor: "hsl(#{360 / (24 * 60) * time.getHours() * 60 +  time.getMinutes()}, 88%, 60%)"
     onClick: ->
-      state["/refresh"] = (state["/refresh"] || 0) + 1
+      if secureMouse
+        handleKey "Enter"
+      else
+        state["/refresh"] = (state["/refresh"] || 0) + 1
     DIV {className: "time"},
       two time.getHours()
       ":"
@@ -357,15 +430,44 @@ dom.CHORE_CHART = ->
             backgroundColor: kids[kid].color
             boxShadow: if allDone(kid) then "0 0 80px #{kids[kid].color}" else "none"
             onClick: ->
-              changeStars kid, 1
-              broadcast 'coin'
+              if !secureMouse
+                changeStars kid, 1
+                broadcast 'coin'
+              else
+                state.login = 2
+                state.username = kid
+                state.password = ""
+                play 'kick'
           DIV
             className: "kid-stars"
             border: "10px solid #{kids[kid].color}"
             onClick: ->
-              changeStars kid, -1
-              broadcast 'stomp'
+              if !secureMouse
+                changeStars kid, -1
+                broadcast 'stomp'
             starTotal kid
+          if secureMouse && isSuper()
+            [
+              DIV
+                className: "kid-stars-button kid-stars-down"
+                border: "10px solid #{kids[kid].color}"
+                key: 'stars-down'
+                onClick: ->
+                  resetLogoutTimer()
+                  changeStars kid, -1
+                  broadcast 'stomp'
+                '-'
+              DIV
+                className: "kid-stars-button kid-stars-up"
+                border: "10px solid #{kids[kid].color}"
+                key: 'stars-up'
+                onClick: ->
+                  resetLogoutTimer()
+                  changeStars kid, 1
+                  broadcast 'stomp'
+                '+'
+            ]
+
         kidChores(kid).map (chore) ->
           key = "/#{today()}/#{kid}/#{chore}"
           done = state[key]
@@ -376,7 +478,9 @@ dom.CHORE_CHART = ->
             opacity: if done then "1.0" else "0.5"
             title: chore
             onClick: ->
-              toggleChore kid, chore
+              if checkMouse(kid)
+                resetLogoutTimer()
+                toggleChore kid, chore
             IMG
               key: "chore-picture"
               src: "/emoji/emoji_u#{choreIcons[chore]}.svg"
